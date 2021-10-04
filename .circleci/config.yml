@@ -102,7 +102,6 @@ jobs:
             cd frontend
             npm run test
       - slack/notify:
-          channel: "#devopst1"
           event: fail
           template: basic_fail_1
 
@@ -128,7 +127,6 @@ jobs:
             npm run test
 
       - slack/notify:
-          channel: "#devopst1"
           event: fail
           template: basic_fail_1
 
