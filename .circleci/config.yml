@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.4.2
+  slack: circleci/slack@4.4.4
 
 commands:
   destroy-environment:
@@ -102,6 +102,7 @@ jobs:
             cd frontend
             npm run test
       - slack/notify:
+          channel: "#devops1"
           event: fail
           template: basic_fail_1
 
@@ -127,6 +128,7 @@ jobs:
             npm run test
 
       - slack/notify:
+          channel: "#devops1"
           event: fail
           template: basic_fail_1
 
