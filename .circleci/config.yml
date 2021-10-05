@@ -105,6 +105,10 @@ jobs:
           channel: "devopst1"
           event: fail
           template: basic_fail_1
+      - slack/notify:
+          channel: "devopst1"
+          event: pass
+          template: basic_success_1
 
   test-backend:
     docker:
@@ -346,7 +350,6 @@ workflows:
           requires: [build-frontend]
       - test-backend:
           requires: [build-backend]
-          context: slack-secrets
       - scan-backend:
           requires: [build-backend]
       - scan-frontend:
