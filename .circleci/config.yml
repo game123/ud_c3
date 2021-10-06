@@ -193,7 +193,7 @@ jobs:
               --output text)
             echo $BACKEND_IP
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
-            --request PUT --data "http://$BACKEND_IP:3030" \
+            --request PUT --data "http://$BACKEND_IP" \
             https://api.memstash.io/values/BACKEND_URL
 
       - run:
@@ -214,11 +214,18 @@ jobs:
                  --filters "Name=tag:project,Values=ud-c3-backend-${CIRCLE_WORKFLOW_ID}" \
                  --output text > inventory.txt
             cat inventory.txt
+      - run:
+          name: Verification and dependencies for deploy-infrastructure:
+          command: |
+            cat ./circleci/ansible/inventory.txt
+            ls ~/project/.circleci/ansible/
+            cat ~/project/.circleci/ansible/inventory.txt
+            yum -y install tar gzip jq npm
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure
+      # Here's where the code to rollback on failure
       - destroy-environment
 
   configure-infrastructure:
@@ -301,44 +308,68 @@ jobs:
             echo "Value sent to memstash: $SUCCESS"
       # Here's where you will add some code to rollback on failure
       - destroy-environment
-  # deploy-frontend:
-  #   docker:
-  #     # Docker image here that supports AWS CLI
-  #   steps:
-  #     # Checkout code from git
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           # your code here
-  #     - run:
-  #         name: Get backend url
-  #         command: |
-  #           # your code here
-  #           export API_URL="http://${BACKEND_IP}:3030"
-  #           echo "${API_URL}"
-  #     - run:
-  #         name: Deploy frontend objects
-  #         command: |
-  #           # your code here
-  #     # Here's where you will add some code to rollback on failure
-
-  # deploy-backend:
-  #   docker:
-  #     # Docker image here that supports Ansible
-  #   steps:
-  #     # Checkout code from git
-  #     # Add ssh keys with fingerprint
-  #     # attach workspace
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           # your code here
-  #     - run:
-  #         name: Deploy backend
-  #         command: |
-  #           # your code here
-  #     # Here's where you will add some code to rollback on failure
-
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
+    steps:
+      # Checkout code from git
+      - checkout
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            sudo npm install webpack-dev-server -g
+            sudo npm install
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
+                        --request GET https://api.memstash.io/values/BACKEND_URL)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo ENVIRONMENT=production > "frontend/.env"
+            echo NODE_ENV=production >> "frontend/.env"
+            echo API_URL="http://${BACKEND_IP}:3030" >> "frontend/.env"
+            echo "${API_URL}"
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            cat .env
+            npm run build
+            aws s3 cp ./dist s3://ud-c3-${CIRCLE_WORKFLOW_ID} --recursive
+      # Here's where you will add some code to rollback on failure
+      - destroy-environment # Rollback on failure
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      # Checkout code from git
+      - checkout
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+        fingerprints: ["d8:b0:54:38:3c:e6:f8:35:61:15:99:96:ee:d5:3b:79"]
+      # attach workspace
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            apk add --update tar gzip curl
+            apk add --update openssh-client
+      - run:
+          name: Deploy backend
+          command: |
+            ANSIBLE_HOST_KEY_CHECKING=False \
+            ansible-playbook -i \
+            .circleci/ansible/inventory.txt \
+            .circleci/ansible/deploy-backend.yml
+      # Here's the code to rollback on failure
+      - destroy-environment
   # smoke-test:
   #   docker:
   #     # Lightweight Docker image
@@ -416,12 +447,12 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
-      # - deploy-backend:
-      #     requires: [run-migrations]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
