@@ -224,13 +224,12 @@ jobs:
       # Docker image here that supports Ansible
       - image: python:3.7-alpine3.11
     steps:
-      # Checkout code from git
       - checkout
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: ["d8:b0:54:38:3c:e6:f8:35:61:15:99:96:ee:d5:3b:79"]
       # attach workspace
-       - attach_workspace:
+      - attach_workspace:
           at: ~/
       - run:
           name: Install dependencies
@@ -259,7 +258,7 @@ jobs:
           command: |
             apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
       - destroy-environment
-      
+
   # run-migrations:
   #   docker:
   #     # Docker image here that supports NodeJS
