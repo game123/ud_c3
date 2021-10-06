@@ -218,7 +218,7 @@ jobs:
           name: Verification and dependencies for deploy-infrastructure
           command: |
             cat ./.circleci/ansible/inventory.txt
-            ls ~/project/.circleci/ansible/
+            ls ./.circleci/ansible/
             cat ~/project/.circleci/ansible/inventory.txt
             yum -y install tar gzip jq npm
       - persist_to_workspace:
