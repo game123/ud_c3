@@ -7,7 +7,10 @@ orbs:
 parameters:
   workflow-id:
     type: string
-    default: "${CIRCLE_WORKFLOW_ID:0:7}"
+    default: "${CIRCLE_WORKFLOW_ID}"
+  memstash-io-token:
+    type: string
+    default: "1cfd202c-c48c-4191-924f-d0752f714dcf"
 
 commands:
   destroy-environment:
@@ -16,14 +19,14 @@ commands:
       # Add parameter here
       workflow-id:
         type: string
-        default: ${CIRCLE_WORKFLOW_ID:0:7}
+        default: ${CIRCLE_WORKFLOW_ID}
 
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rb s3://ud-c3-${CIRCLE_WORKFLOW_ID:0:7} --force
+            aws s3 rb s3://ud-c3-${CIRCLE_WORKFLOW_ID} --force
             aws cloudformation delete-stack --stack-name  ud-c3-backend-<< parameters.workflow-id >>
             aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
 
@@ -55,14 +58,10 @@ jobs:
       - restore_cache:
           keys: [frontend-build]
       - run:
-          name: Install dependencies
-          command: |
-            cd frontend
-            npm install
-      - run:
           name: Build front-end
           command: |
             cd frontend
+            npm install
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
@@ -76,15 +75,11 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Install dependencies
-          command: |
-            cd backend
-            npm install
-      - run:
           name: Back-end build
           command: |
             # Your code here
             cd backend
+            npm install
             npm run build
 
       - save_cache:
@@ -99,12 +94,7 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: ["frontend-build"]
-      - run:
-          name: Install Frontend deps
-          command: |
-            cd frontend
-            npm install
+          keys: [frontend-build]
 
       # Your job code here
       - run:
@@ -132,11 +122,6 @@ jobs:
           keys: [backend-build]
       # Your job code here
       - run:
-          name: Install Backend deps
-          command: |
-            cd backend
-            npm install
-      - run:
           name: Test code
           command: |
             cd backend
@@ -155,16 +140,12 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: ["frontend-build"]
-      - run:
-          name: Install Frontend dependencies
-          command: |
-            cd frontend
-            npm install
+          keys: [frontend-build]
       - run:
           name: Scan Frontend
           command: |
             cd frontend
+            npm update
             npm audit fix --audit-level=critical --force
 
   scan-backend:
@@ -177,14 +158,10 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
-          name: Install Backend dependencies
-          command: |
-            cd backend
-            npm install
-      - run:
           name: Scan Backend
           command: |
             cd backend
+            npm update
             npm audit fix --audit-level=critical --force
 
   deploy-infrastructure:
@@ -200,8 +177,8 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=udc3-backend-${CIRCLE_WORKFLOW_ID} \
-              --stack-name udc3-backend-${CIRCLE_WORKFLOW_ID} \
+              --tags project=ud-c3-backend-${CIRCLE_WORKFLOW_ID} \
+              --stack-name ud-c3-backend-${CIRCLE_WORKFLOW_ID} \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
       - run:
           name: Fetch and Save Backend URL
@@ -229,8 +206,8 @@ jobs:
             aws ec2 describe-instances \
                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
                  --filters "Name=tag:project,Values=ud-c3-backend-${CIRCLE_WORKFLOW_ID}" \
-                 --output text > inventory.txt
-            cat inventory.txt
+                 --output text > .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
