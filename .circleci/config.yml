@@ -215,7 +215,7 @@ jobs:
                  --output text > inventory.txt
             cat inventory.txt
       - run:
-          name: Verification and dependencies for deploy-infrastructure:
+          name: Verification and dependencies for deploy-infrastructure
           command: |
             cat ./circleci/ansible/inventory.txt
             ls ~/project/.circleci/ansible/
