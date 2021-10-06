@@ -217,7 +217,7 @@ jobs:
       - run:
           name: Verification and dependencies for deploy-infrastructure
           command: |
-            cat ./circleci/ansible/inventory.txt
+            cat ./.circleci/ansible/inventory.txt
             ls ~/project/.circleci/ansible/
             cat ~/project/.circleci/ansible/inventory.txt
             yum -y install tar gzip jq npm
@@ -451,8 +451,8 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-      # - deploy-backend:
-      #     requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
