@@ -406,7 +406,7 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            S3_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3.amazonaws.com/index.html"
+            S3_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
             if curl -s ${S3_URL} | grep -q "Welcome"
             then
               return 0
