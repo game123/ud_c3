@@ -212,7 +212,7 @@ jobs:
             aws ec2 describe-instances \
                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
                  --filters "Name=tag:project,Values=ud-c3-backend-${CIRCLE_WORKFLOW_ID}" \
-                 --output text > inventory.txt
+                 --output text >> inventory.txt
             cat inventory.txt
       - run:
           name: Verification and dependencies for deploy-infrastructure
@@ -376,6 +376,7 @@ jobs:
       - run:
           name: Deploy backend
           command: |
+            cat .circleci/ansible/inventory.txt
             ANSIBLE_HOST_KEY_CHECKING=False \
             ansible-playbook -i \
             .circleci/ansible/inventory.txt \
