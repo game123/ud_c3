@@ -402,7 +402,7 @@ jobs:
           name: Backend smoke test.
           command: |
             echo "${API_URL}"
-            curl -s "${BACKEND_URL}/api/status"
+            curl -s "${API_URL}/api/status"
       - run:
           name: Frontend smoke test.
           command: |
