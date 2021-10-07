@@ -46,8 +46,8 @@ commands:
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
             export SUCCESS="$(curl -H 'token: << parameters.workflow-id >>' --request GET https://api.memstash.io/values/migration_<< parameters.workflow-id >>)"
             # SUCCESS = 1
-            echo $SUCCESS
-            if(( $SUCCESS==1 )); 
+            echo "${SUCCESS}"
+            if(( ${SUCCESS}==1 )); 
             then
               cd ~/project/backend
               npm install
