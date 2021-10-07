@@ -459,7 +459,7 @@ jobs:
           name: Update cloudfront distribution
           command: |
             export OldWorkflowId=$(aws cloudformation \
-              list-exports --query "Exports[?Name==`WorkflowID`].Value" \
+              list-exports --query "Exports[?Name=='WorkflowID'].Value" \
               --no-paginate --output text)
             export STACKS=$(aws cloudformation list-stacks \
               --query "StackSummaries[*].StackName" \
@@ -483,24 +483,32 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - revert-migrations
       - destroy-environment
-# cleanup:
-#   docker:
-#     # Docker image here
-#   steps:
-#     # Checkout code from git
-#     - run:
-#         name: Get old stack workflow id
-#         command: |
-#           # your code here
-#           export OldWorkflowID="the id here"
-#           export STACKS=[] #put the list of stacks here
-#     - run:
-#         name: Remove old stacks and files
-#         command: |
-#           if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-#           then
-#             # your code here
-#           fi
+  cleanup:
+    docker:
+      # Docker image here
+      - image: amazon/aws-cli
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Get old stack workflow id
+          command: |
+            # your code here
+            export OldWorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name=='WorkflowID'].Value" \
+              --no-paginate --output text)
+            export STACKS=$(aws cloudformation list-stacks \
+              --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
+      - run:
+          name: Remove old stacks and files
+          command: |
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            then              
+              aws s3 rm s3://udapeople-${OldWorkflowId} --recursive              
+              aws cloudformation delete-stack --stack-name "ud-c3-backend-${OldWorkflowID}"               
+              aws cloudformation delete-stack --stack-name "ud-c3-frontend-${OldWorkflowID}"
+            fi
 
 workflows:
   default:
@@ -532,5 +540,5 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      # - cleanup:
-      #     requires: [cloudfront-update]
+      - cleanup:
+          requires: [cloudfront-update]
