@@ -27,8 +27,8 @@ commands:
           when: on_fail
           command: |
             aws s3 rb s3://ud-c3-${CIRCLE_WORKFLOW_ID} --force
-            aws cloudformation delete-stack --stack-name  ud-c3-backend-<< parameters.workflow-id >>
-            aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
+            aws cloudformation delete-stack --stack-name  udapeople<< parameters.workflow-id >>
+            # aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -331,10 +331,10 @@ jobs:
           command: |
             BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
                         --request GET https://api.memstash.io/values/BACKEND_URL)
-            export API_URL="http://${BACKEND_IP}:3030"
+            export API_URL="http://${BACKEND_IP}"
             echo ENVIRONMENT=production > "frontend/.env"
             echo NODE_ENV=production >> "frontend/.env"
-            echo API_URL="http://${BACKEND_IP}:3030" >> "frontend/.env"
+            echo API_URL="http://${BACKEND_IP}" >> "frontend/.env"
             echo "${API_URL}"
       - run:
           name: Deploy frontend objects
@@ -418,20 +418,26 @@ jobs:
       # Here's the code to rollback on failure
       - destroy-environment
 
-  # cloudfront-update:
-  #   docker:
-  #     # Docker image here that supports AWS CLI
-  #   steps:
-  #     # Checkout code from git
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           # your code here
-  #     - run:
-  #         name: Update cloudfront distribution
-  #         command: |
-  #           # your code here
-  #     # Here's where you will add some code to rollback on failure
+  cloudfront-update:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install nodejs tar gzip
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name udapeople-cloudfront \
+              --parameter-overrides WorkflowID=${CIRCLE_WORKFLOW_ID} \
+              --tags project=udapeople-${CIRCLE_WORKFLOW_ID}
+      # Here's where you will add some code to rollback on failure
 
 # cleanup:
 #   docker:
