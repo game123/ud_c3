@@ -340,7 +340,7 @@ jobs:
             cd frontend
             cat .env
             npm run build
-            aws s3 cp ./dist s3://ud-c3-${CIRCLE_WORKFLOW_ID} --recursive
+            aws s3 cp ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID} --recursive
       # Here's where you will add some code to rollback on failure
       - destroy-environment # Rollback on failure
   deploy-backend:
