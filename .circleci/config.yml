@@ -27,7 +27,7 @@ commands:
           when: on_fail
           command: |
             aws s3 rb s3://ud-c3-${CIRCLE_WORKFLOW_ID} --force
-            aws cloudformation delete-stack --stack-name  udapeople<< parameters.workflow-id >>
+            aws cloudformation delete-stack --stack-name  udapeople-<< parameters.workflow-id >>
             # aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
 
   revert-migrations:
@@ -368,6 +368,11 @@ jobs:
             apk add --update ansible
             apk add --update tar gzip curl
             apk add --update openssh-client
+       - run:
+          name: Compress Backend
+          command: |
+            tar -C backend -czvf artifact.tar.gz .
+            ls -la
       - run:
           name: Deploy backend
           command: |
