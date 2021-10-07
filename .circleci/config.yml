@@ -443,8 +443,10 @@ jobs:
             apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
       - revert-migrations
       - destroy-environment
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          channel: "devopst1"
+          event: fail
+          template: basic_fail_1
 
   cloudfront-update:
     docker:
