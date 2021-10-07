@@ -26,7 +26,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rb s3://ud-c3-${CIRCLE_WORKFLOW_ID} --force
+            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID} --force
             aws cloudformation delete-stack --stack-name  udapeople-<< parameters.workflow-id >>
             # aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
 
@@ -421,11 +421,16 @@ jobs:
             S3_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com/#/employees"
             if curl -s ${S3_URL} | grep -q "Welcome"
             then
-              return 0
+              return 1
             else
               return 1
             fi
-      # Here's the code to rollback on failure
+      - run:
+          name: Install AWS CLI for rollback
+          when: on_fail
+          command: |
+            apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
+
       - destroy-environment
 
   cloudfront-update:
