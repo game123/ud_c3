@@ -458,27 +458,27 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
-            export OldWorkflowId=$(aws cloudformation \
-              list-exports --query "Exports[?Name=='WorkflowID'].Value" \
-              --no-paginate --output text)
-            export STACKS=$(aws cloudformation list-stacks \
-              --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
-            echo OldWorkflowId: "${OldWorkflowId}"
-            echo STACKS: ${STACKS}
-            # echo Update CloudFront
+            # export OldWorkflowId=$(aws cloudformation \
+            #   list-exports --query "Exports[?Name=='WorkflowID'].Value" \
+            #   --no-paginate --output text)
+            # export STACKS=$(aws cloudformation list-stacks \
+            #   --query "StackSummaries[*].StackName" \
+            #   --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
+            # echo OldWorkflowId: "${OldWorkflowId}"
+            # echo STACKS: ${STACKS}
+            # # echo Update CloudFront
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --stack-name udapeople-cloudfront \
               --parameter-overrides WorkflowID=${CIRCLE_WORKFLOW_ID} \
               --tags project=udapeople-${CIRCLE_WORKFLOW_ID}
 
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
-            then              
-              aws s3 rm s3://udapeople-${OldWorkflowId} --recursive              
-              aws cloudformation delete-stack --stack-name "ud-c3-backend-${OldWorkflowID}"               
-              aws cloudformation delete-stack --stack-name "ud-c3-frontend-${OldWorkflowID}"
-            fi
+            # if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            # then              
+            #   aws s3 rm s3://udapeople-${OldWorkflowId} --recursive              
+            #   aws cloudformation delete-stack --stack-name "ud-c3-backend-${OldWorkflowID}"               
+            #   aws cloudformation delete-stack --stack-name "ud-c3-frontend-${OldWorkflowID}"
+            # fi
 
       # Here's where you will add some code to rollback on failure
       - revert-migrations
@@ -500,6 +500,8 @@ jobs:
             export STACKS=$(aws cloudformation list-stacks \
               --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
+            echo OldWorkflowId: "${OldWorkflowId}"
+            echo STACKS: ${STACKS}
       - run:
           name: Remove old stacks and files
           command: |
