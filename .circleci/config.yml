@@ -193,7 +193,7 @@ jobs:
               --output text)
             echo $BACKEND_IP
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
-            --request PUT --data "http://$BACKEND_IP" \
+            --request PUT --data "http://$BACKEND_IP:3030" \
             https://api.memstash.io/values/BACKEND_URL
 
       - run:
@@ -393,16 +393,18 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
+            BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
                         --request GET https://api.memstash.io/values/BACKEND_URL)
-            export API_URL="http://${BACKEND_IP}:3030"
+            # export $BACKEND_URL
 
-            echo "${API_URL}"
+            echo "${BACKEND_URL}"
       - run:
           name: Backend smoke test.
           command: |
-            echo "${API_URL}"
-            curl -s "${API_URL}/api/status"
+            BACKEND_URL=$(curl -H "token: ${CIRCLE_WORKFLOW_ID}" \
+                        --request GET https://api.memstash.io/values/BACKEND_URL)
+            echo "${BACKEND_URL}"
+            curl -s "${BACKEND_URL}/api/status"
       - run:
           name: Frontend smoke test.
           command: |
@@ -413,7 +415,7 @@ jobs:
             else
               return 1
             fi
-      # Here's where you will add some code to rollback on failure
+      # Here's the code to rollback on failure
       - destroy-environment
 
   # cloudfront-update:
