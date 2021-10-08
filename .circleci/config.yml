@@ -185,7 +185,7 @@ jobs:
       # Checkout code from git
       - checkout
       - aws-cli/setup
-      - run: yum -y install tar gzip
+      - run: yum -y install tar gzip unzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
