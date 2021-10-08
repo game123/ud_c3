@@ -180,12 +180,17 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
+        user: root
     steps:
       # Checkout code from git
       - checkout
-      - aws-cli/setup
-      - run: yum -y install tar gzip unzip
+      - run:
+          name: install aws aws-cli
+          command: |
+            apt-get update
+            apt -y install awscli
+
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -230,7 +235,7 @@ jobs:
             cat ./.circleci/ansible/inventory.txt
             ls ./.circleci/ansible/
             cat ~/project/.circleci/ansible/inventory.txt
-            yum -y install tar gzip jq npm
+            # yum -y install tar gzip jq npm
       - persist_to_workspace:
           root: ~/
           paths:
