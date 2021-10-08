@@ -150,14 +150,15 @@ jobs:
           name: Scan Frontend
           command: |
             cd frontend
-            npm install
-      - run:
-          name: Scan Frontend
-          command: |
-            cd frontend
-            # npm audit --audit-level=critical > audit.log
-            # tail audit.log -n 200
-            # npm audit fix --audit-level=critical --force
+            npm i
+            npm audit fix --audit-level=critical --force
+      # - run:
+      #     name: Scan Frontend
+      #     command: |
+      #       cd frontend
+      #       # npm audit --audit-level=critical > audit.log
+      #       # tail audit.log -n 200
+      #       # npm audit fix --audit-level=critical --force
 
   scan-backend:
     docker:
@@ -485,8 +486,8 @@ jobs:
             # fi
 
       # Here's where you will add some code to rollback on failure
-      - revert-migrations
-      - destroy-environment
+      # - revert-migrations
+      # - destroy-environment
   cleanup:
     docker:
       # Docker image here
