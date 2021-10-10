@@ -3,3 +3,10 @@
 
 [URL02] Deployed and functioning front-end application in an S3
         http://udapeople-44eb4aa4-a4e8-4908-a0ba-1676563c2ebe.s3-website-us-east-1.amazonaws.com
+
+[URL03]
+        In the project zip file
+[URL04]
+        In the project zip file
+[URL05]
+        In the project zip file
