@@ -30,6 +30,34 @@ commands:
             aws cloudformation delete-stack --stack-name  ud-c3-backend-<< parameters.workflow-id >>
             aws cloudformation delete-stack --stack-name  ud-c3-frontend-<< parameters.workflow-id >>
 
+  export-env-file:
+    description: Command used for creating env file
+    steps:
+      - run:
+          name: Add env vars to env file
+          command: |
+            # echo "NODE_ENV=production" >> backend/.env
+            # echo "VERSION=1" >> backend/.env
+            # echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> backend/.env
+            # echo "TYPEORM_MIGRATIONS_DIR=${TYPEORM_MIGRATIONS_DIR}" >> backend/.env
+            # echo "TYPEORM_ENTITIES=${TYPEORM_ENTITIES}" >> backend/.env
+            # echo "TYPEORM_MIGRATIONS=${TYPEORM_MIGRATIONS}" >> backend/.env
+            # echo "TYPEORM_HOST=${TYPEORM_HOST}" >> backend/.env
+            # echo "TYPEORM_PORT=${TYPEORM_PORT}" >> backend/.env
+            # echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
+            # echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
+            # echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env
+            echo ENVIRONMENT=production > "backend/.env"
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> "backend/.env"
+            echo TYPEORM_ENTITIES=./dist/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
+
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
@@ -38,6 +66,8 @@ commands:
         type: string
         default: ${CIRCLE_WORKFLOW_ID}
     steps:
+      - checkout
+      - export-env-file
       - run:
           name: Revert migrations
           # Add when this will run
@@ -288,22 +318,14 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - export-env-file
       - run:
           name: Run migrations
           command: |
-            echo ENVIRONMENT=production > "backend/.env"
-            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
             cd backend
-            sudo npm install
-            sudo npm run migrations > migration.txt
+            npm install
+            npm audit fix --audit-level=critical --force
+            npm run migrations > migration.txt
             cat migration.txt
       - run:
           name: Send migration results to memstash
@@ -336,9 +358,7 @@ jobs:
           command: |
             apt-get update
             apt -y install awscli
-            cd frontend
-            sudo npm install webpack-dev-server -g
-            sudo npm install
+
       - run:
           name: Get backend url
           command: |
@@ -350,12 +370,13 @@ jobs:
             echo API_URL="http://${BACKEND_IP}" >> "frontend/.env"
             echo "${API_URL}"
       - run:
-          name: Deploy frontend objects
+          name: "Baking backend API_URL into the frontend"
           command: |
             cd frontend
-            cat .env
-            npm install
+            npm install webpack-dev-server -g
+            npm i
             npm run build
+            npm audit fix --audit-level=critical --force
       - run:
           name: Deploy frontend
           command: |
@@ -370,6 +391,7 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - export-env-file
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: ["d8:b0:54:38:3c:e6:f8:35:61:15:99:96:ee:d5:3b:79"]
@@ -379,9 +401,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible
-            apk add --update tar gzip curl
-            apk add --update openssh-client
+            apk add --update tar gzip ansible nodejs npm curl
+            apk add --no-cache openssh-client
+            apk add --no-cache --upgrade bash
+            pip install awscli
       - run:
           name: Compress Backend
           command: |
@@ -404,6 +427,7 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - export-env-file
       - run:
           name: Install dependencies
           command: |
@@ -441,8 +465,8 @@ jobs:
           when: on_fail
           command: |
             apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
-      - revert-migrations
-      - destroy-environment
+      # - revert-migrations
+      # - destroy-environment
       - slack/notify:
           channel: "devopst1"
           event: fail
