@@ -357,13 +357,13 @@ jobs:
             npm install
             npm run build
       - run:
-        name: "Baking backend API_URL into the frontend"
-        command: |
-          npm install webpack-dev-server -g
-          cd frontend
-          npm i
-          npm run build
-          npm audit fix --audit-level=critical --force
+          name: "Baking backend API_URL into the frontend"
+          command: |
+            npm install webpack-dev-server -g
+            cd frontend
+            npm i
+            npm run build
+            npm audit fix --audit-level=critical --force
       - run:
           name: Deploy frontend
           command: |
